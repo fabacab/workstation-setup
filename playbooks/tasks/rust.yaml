@@ -1,0 +1,24 @@
+---
+- name: Attempt Rust installation.
+  environment:
+    # Force the use of an additional directory for the shell search path in
+    # case the various Rust toolchain utilities were installed with Homebrew.
+    PATH: "{{ lookup('env', 'PATH') }}:/opt/homebrew/bin:{{ lookup('env', 'HOME') }}/.cargo/bin"
+  block:
+    - name: Install Rust toolchain via Rustup.
+      ansible.builtin.command:
+        argv:
+          - rustup-init
+          - '-y'
+          - '--verbose'
+        creates: "{{ lookup('env', 'HOME') }}/.rustup"
+
+    - name: Add Rust release.
+      ansible.builtin.command:
+        cmd: rustup update
+
+    - name: Add Rust WebAssembly target.
+      register: result
+      ansible.builtin.command:
+        cmd: rustup target add wasm32-unknown-unknown
+      changed_when: "'is up to date' not in result.stderr"

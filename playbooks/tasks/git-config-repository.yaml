@@ -1,0 +1,19 @@
+# These tasks ensure that any repository with a `scripts/git/hooks`
+# directory is configured such that the scripts in that directory
+# are used as the Git hooks for that repository. This is primarily
+# useful for defining a conventional intra-repository location for
+# sharing common repository-level automations between developers.
+---
+- name: Register existence of repository Git hooks directory.
+  ansible.builtin.stat:
+    path: "{{ git_clone_dest }}/{{ item }}/scripts/git/hooks"
+  register: s
+
+- name: Configure Git hooks path in company Git repositories.
+  when: s.stat.exists
+  ansible.builtin.git_config:
+    scope: local
+    repo: "{{ git_clone_dest }}/{{ item }}"
+    name: core.hooksPath
+    value: "{{ s.stat.path }}"
+    state: present

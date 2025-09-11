@@ -1,0 +1,7 @@
+---
+- name: Make Downloads directory.
+  ansible.builtin.file:
+      path: "{{ lookup('env', 'HOME') }}/Downloads"
+      state: directory
+
+# TODO

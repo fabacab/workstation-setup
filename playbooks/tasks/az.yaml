@@ -1,0 +1,34 @@
+# Azure CLI for macOS is officially distributed via Homebrew, so it was
+# already installed for macOS users earlier. For GNU/Linux machines,
+# we need to install it more manually, so here we go.
+---
+- name: Install Azure CLI for Debian Linux.
+  when: ansible_facts.os_family == "Debian"
+  become: true
+  block:
+      - name: Install Azure CLI dependencies for Debian Linux.
+        ansible.builtin.apt:
+            name: "{{ item }}"
+            update_cache: true
+        loop:
+            - apt-transport-https
+            - ca-certificates
+            - curl
+            - gnupg
+            - lsb-release
+
+      - name: Add Microsoft PGP signing key.
+        ansible.builtin.apt_key:
+            url: https://packages.microsoft.com/keys/microsoft.asc
+            state: present
+
+      - name: Add Azure CLI software repository.
+        ansible.builtin.apt_repository:
+            repo: "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ {{ ansible_facts.lsb.codename }} main"
+            state: present
+
+      - name: Install Azure CLI for Debian Linux.
+        ansible.builtin.apt:
+            name: azure-cli
+            update_cache: true
+            state: present

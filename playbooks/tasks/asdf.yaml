@@ -1,0 +1,16 @@
+---
+- name: Clone asdf repository
+  ansible.builtin.git:
+    repo: https://github.com/asdf-vm/asdf.git
+    dest: "{{ asdf_home }}"
+    version: "{{ asdf_version }}"
+
+- name: Add asdf to shell
+  ansible.builtin.lineinfile:
+    path: "{{ item }}"
+    line: "source $HOME/.asdf/asdf.sh"
+    state: present
+  loop:
+    - "{{ lookup('env', 'HOME') }}/.bash_profile"
+    - "{{ lookup('env', 'HOME') }}/.zshrc"
+  ignore_errors: true

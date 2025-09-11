@@ -1,0 +1,33 @@
+- name: Install Docker CE engine for Debian Linux.
+  when: ansible_facts.os_family == "Debian"
+  become: true
+  block:
+      - name: Install Docker CE dependencies for Debian Linux.
+        ansible.builtin.apt:
+            name: "{{ item }}"
+            update_cache: true
+        loop:
+            - apt-transport-https
+            - ca-certificates
+            - curl
+            - gnupg-agent
+            - software-properties-common
+
+      - name: Add Docker official PGP public key.
+        ansible.builtin.apt_key:
+            url: https://download.docker.com/linux/ubuntu/gpg
+            state: present
+
+      - name: Add Docker APT repository.
+        ansible.builtin.apt_repository:
+            repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_facts.lsb.codename }} stable"
+            state: present
+
+      - name: Install Docker CE engine for Debian Linux.
+        ansible.builtin.apt:
+            name: "{{ item }}"
+            state: present
+        loop:
+            - docker-ce
+            - docker-ce-cli
+            - containerd.io

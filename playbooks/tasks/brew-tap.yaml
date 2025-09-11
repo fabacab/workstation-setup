@@ -1,0 +1,7 @@
+---
+- name: Tap Homebrew repositories.
+  when: homebrew_casks is defined
+  community.general.homebrew_tap:
+    name: "{{ item.name }}"
+    url: "{{ item.url }}"
+  loop: "{{ homebrew_casks }}"

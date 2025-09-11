@@ -1,0 +1,8 @@
+---
+- name: Download and install ngrok for macOS.
+  become: true
+  ansible.builtin.unarchive:
+    src: https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-darwin-{% if 'arm64' == ansible_facts.architecture %}arm64{% else %}amd64{% endif %}.zip
+    dest: /usr/local/bin
+    remote_src: true
+    creates: /usr/local/bin/ngrok

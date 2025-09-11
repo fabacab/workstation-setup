@@ -1,0 +1,7 @@
+---
+- name: Install tools with Homebrew.
+  when: item.when
+  community.general.homebrew:
+    name: "{{ item.name }}"
+  loop: "{{ homebrew_tools }}"
+  ignore_errors: true

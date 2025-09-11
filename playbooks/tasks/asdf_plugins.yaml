@@ -1,0 +1,46 @@
+---
+# This is needed to install Terraform with its asdf plugin.
+- name: Install dependencies on GNU/Linux
+  when: ansible_facts.system == "Linux"
+  become: true
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - unzip
+    - python
+
+- name: Add plugin to asdf
+  register: r
+  ansible.builtin.shell: >-
+    source "{{ asdf_home }}/asdf.sh"
+    && asdf plugin add "{{ item.name }}" {% if item.git_url is defined %} "{{ item.git_url }}"{% endif %}
+  args:
+    executable: "{{ lookup('env', 'SHELL') }}"
+  failed_when:
+    - r.rc > 0
+    - r.rc != 2
+  changed_when:
+    - "'Plugin named ' + item.name + ' already added' not in r.stderr"
+  loop: "{{ asdf_plugins }}"
+  ignore_errors: true
+
+- name: Install utilities with asdf
+  environment: "{{ item.environment | default({}) }}"
+  ansible.builtin.shell: >-
+    source "{{ asdf_home }}/asdf.sh"
+    && asdf install "{{ item.name }}" "{{ item.version }}"
+    && asdf global "{{ item.name }}" "{{ item.version }}"
+  args:
+    executable: "{{ lookup('env', 'SHELL') }}"
+    creates: "{{ asdf_home }}/installs/{{ item.name }}/{{ item.version }}"
+  loop: "{{ asdf_plugins }}"
+  ignore_errors: true
+
+- name: Follow up with post-commands
+  when: asdf_plugin.post_commands is defined
+  ansible.builtin.include_tasks:
+    file: tasks/asdf_plugin_post_commands.yaml
+  loop: "{{ asdf_plugins }}"
+  loop_control:
+    loop_var: asdf_plugin

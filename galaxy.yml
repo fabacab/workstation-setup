@@ -1,0 +1,20 @@
+---
+namespace: fabacab
+name: workstation_setup
+version: 0.0.1
+readme: README.md
+authors:
+    - fabacab
+description: Set up an engineer's workstation quickly and easily.
+repository: https://github.com/fabacab/workstation-setup.git
+documentation: https://github.com/fabacab/workstation-setup#workstation-setup
+homepage: https://github.com/fabacab/workstation-setup
+issues: https://github.com/fabacab/workstation-setup/issues
+build_ignore:
+    - "*.log"
+    - "*.swp"
+    - .gitignore
+    - Makefile
+    - build
+    - .vagrant
+    - Vagrantfile

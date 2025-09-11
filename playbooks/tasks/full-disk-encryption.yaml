@@ -1,0 +1,3 @@
+---
+- name: Set up full disk encryption.
+  ansible.builtin.include_tasks: "full-disk-encryption_{{ ansible_facts.system }}.yaml"

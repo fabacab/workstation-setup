@@ -1,0 +1,134 @@
+---
+- hosts: localhost
+
+  # If we need to prompt the user for anything, put those prompts here.
+  # Alternatively, the user should pass these in as `--extra-vars`
+  # when they run this Playbook. See `workstation-sample.yaml`.
+  vars_prompt:
+    - name: organization_user
+      prompt: "User part of your email adress (default: '{{ lookup('pipe', 'whoami') | quote }}')"
+      private: false
+    - name: organization_name
+      prompt: "Domain part of your organization or company's email address (default: '{{ organization_name }}')"
+      private: false
+    - name: github_username
+      prompt: "Your GitHub.com username"
+      private: false
+    - name: github_organization
+      prompt: "You or your company's GitHub Organization (default: '{{ github_username | quote }}')"
+      private: false
+    - name: git_author_name
+      prompt: "Your name for Git commits"
+      private: false
+    - name: git_author_email
+      prompt: "Your email address for Git commits"
+      private: false
+    - name: docker_hub_username
+      prompt: "Your Docker Hub username (Docker ID)"
+      private: false
+    - name: workstation_workspace_dir
+      prompt: "Local filesystem path of where you'd like your workstation workspace (source code checkouts) to be placed (default: '{{ lookup('env', 'HOME') }}/src')"
+      private: false
+
+  vars_files:
+    - vars/main.yaml
+
+  tasks:
+    - name: Check prerequisites
+      ansible.builtin.import_tasks: tasks/prereqs.yaml
+
+    - name: Enable full disk encryption
+      ansible.builtin.import_tasks: tasks/full-disk-encryption.yaml
+
+    - name: Ensure shell environment is set up
+      ansible.builtin.include_tasks: tasks/shell-env.yaml
+      loop:
+        - .bash_profile
+        - .zshrc
+
+    - name: Set up local SSH client configuration
+      ansible.builtin.include_tasks: tasks/ssh-client.yaml
+
+    - name: Install 1Password
+      ansible.builtin.import_tasks: tasks/1password.yaml
+
+    # TODO: Tailscale is our company VPN. Let's do this early.
+    - name: Install Tailscale
+      ansible.builtin.import_tasks: tasks/tailscale.yaml
+
+    - name: Configure Git client and repositories
+      block:
+        - name: Configure Git client
+          ansible.builtin.import_tasks: tasks/git-config.yaml
+        - name: Clone Git repositories
+          ansible.builtin.import_tasks: tasks/git.yaml
+        - name: Configure Git repositories
+          ansible.builtin.include_tasks: tasks/git-config-repository.yaml
+          loop: "{{ git_company_repositories }}"
+      vars:
+        git_clone_dest: "{{ workstation_workspace_dir | default(lookup('env', 'workstation_workspace_dir'), true) | default(lookup('env', 'PWD'), true) }}"
+
+    - name: Install asdf
+      ansible.builtin.import_tasks: tasks/asdf.yaml
+    - name: Install utilities with asdf
+      ansible.builtin.import_tasks: tasks/asdf_plugins.yaml
+
+    - name: Install extra utilities via Pip
+      ansible.builtin.import_tasks: tasks/pip.yaml
+
+    - name: Install Rosetta 2 for Apple Silicon Macs
+      when: ansible_facts.os_family == "Darwin" and ansible_facts.machine == "arm64"
+      become: true
+      ansible.builtin.command:
+        cmd: softwareupdate --install-rosetta --agree-to-license
+        creates: /usr/libexec/rosetta/oahd
+
+    # This playbook prefers `asdf` over Homebrew because it easily
+    # handles selecting different versions of the same tool, e.g., Terraform
+    # on a per-directory basis. However, Homebrew is exceptionally common, so
+    # this is where any Homebrew-specific installations can be made.
+    - name: Homebrew
+      when: ansible_facts.os_family == "Darwin" or ansible_facts.system == "Linux"
+      block:
+        - name: Install Homebrew
+          ansible.builtin.import_tasks: tasks/brew.yaml
+
+        - name: Tap Homebrew repositories
+          ansible.builtin.import_tasks: tasks/brew-tap.yaml
+
+        - name: Install tools with Homebrew
+          ansible.builtin.import_tasks: tasks/brew-install.yaml
+
+    - name: Install AWS CLI
+      ansible.builtin.import_tasks: tasks/aws.yaml
+
+    - name: Install Docker
+      ansible.builtin.import_tasks: tasks/docker.yaml
+
+    - name: Install Minikube
+      ansible.builtin.import_tasks: tasks/minikube.yaml
+
+    - name: Install Rust
+      ansible.builtin.import_tasks: tasks/rust.yaml
+
+    - name: Print post-setup message
+      ansible.builtin.pause:
+        seconds: 1
+        prompt: |
+          💻✅💖
+          The workstation setup playbook has been run successfully! Remember to
+          open a new terminal to source (reload) your newly configured shell environment.
+
+          Enjoy your newly configured workstation!
+
+    # Not really needed for now but will be nice if or when we
+    # go multi-cloud.
+    #- name: Install Azure CLI.
+    #  ansible.builtin.import_tasks: tasks/az.yaml
+
+    #- name: Install ngrok.
+    #  ansible.builtin.import_tasks: tasks/ngrok.yaml
+
+  handlers:
+    - name: Reboot
+      ansible.builtin.reboot:

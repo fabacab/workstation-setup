@@ -1,0 +1,31 @@
+---
+- name: Configure name in Git client.
+  community.general.git_config:
+    scope: global
+    name: user.name
+    value: "{{ git_author_name }}"
+
+- name: Configure email in Git client.
+  community.general.git_config:
+    scope: global
+    name: user.email
+    value: "{{ git_author_email }}"
+
+- name: Configure push default in Git client.
+  community.general.git_config:
+    scope: global
+    name: push.default
+    value: current
+
+- name: Configure pull default in Git client.
+  community.general.git_config:
+    scope: global
+    name: pull.default
+    value: current
+
+- name: Configure macOS credential helper in Git client.
+  when: ansible_facts.os_family == "Darwin"
+  community.general.git_config:
+    scope: global
+    name: credential.helper
+    value: osxkeychain

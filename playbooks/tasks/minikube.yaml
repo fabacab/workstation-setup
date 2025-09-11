@@ -1,0 +1,3 @@
+---
+- name: Download and install Minikube.
+  ansible.builtin.include_tasks: "minikube_{{ ansible_facts.system }}.yaml"

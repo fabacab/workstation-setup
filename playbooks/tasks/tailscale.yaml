@@ -1,0 +1,3 @@
+---
+- name: Download and install Tailscale.
+  ansible.builtin.include_tasks: "tailscale_{{ ansible_facts.system }}.yaml"

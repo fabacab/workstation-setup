@@ -1,0 +1,16 @@
+# This file is called in a loop, once for each supported shell.
+# The `item` variable dereferences to the relative path of that
+# shell startup file. For example, `.bash_profile` or `.zshrc`.
+---
+- name: Source organization-specific shell startup files.
+  ansible.builtin.lineinfile:
+    path: "{{ lookup('env', 'HOME') }}/{{ item }}"
+    line: "source ~/.{{ organization_name }}{{ item }}"
+    state: present
+    create: true
+  ignore_errors: true
+
+- name: Create organization-specific development environment variable file.
+  ansible.builtin.template:
+    src: organization-shell-env.j2
+    dest: "{{ lookup('env', 'HOME') }}/.{{ organization_name }}{{ item }}"

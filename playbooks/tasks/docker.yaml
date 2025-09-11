@@ -1,0 +1,3 @@
+---
+- name: Download and install Docker CE.
+  ansible.builtin.include_tasks: "docker_{{ ansible_facts.system }}.yaml"

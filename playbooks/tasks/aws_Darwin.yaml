@@ -1,0 +1,39 @@
+---
+- name: Download AWS CLI installer for macOS.
+  ansible.builtin.get_url:
+      url: https://awscli.amazonaws.com/AWSCLIV2.pkg
+      dest: "{{ lookup('env', 'HOME') }}/Downloads/AWSCLIV2.pkg"
+
+- name: Make temporary installer choices file.
+  ansible.builtin.tempfile:
+      state: file
+      prefix: aws-choices-
+      suffix: .xml
+  register: aws_installer_choices_file
+
+- name: Prepare AWS CLI install choices for macOS.
+  ansible.builtin.template:
+      src: aws_installer_choices.xml.j2
+      dest: "{{ aws_installer_choices_file.path }}"
+
+- name: Install AWS CLI for macOS.
+  ansible.builtin.command: >-
+      installer -pkg "{{ lookup('env', 'HOME') }}/Downloads/AWSCLIV2.pkg"
+      -target CurrentUserHomeDirectory
+      -applyChoiceChangesXML "{{ aws_installer_choices_file.path }}"
+  args:
+      creates: "{{ lookup('env', 'HOME') }}/bin/aws-cli"
+
+- name: Symlink AWS CLI commands for macOS.
+  file:
+      src: "{{ lookup('env', 'HOME') }}/bin/aws-cli/{{ item }}"
+      dest: "{{ lookup('env', 'HOME') }}/bin/{{ item }}"
+      state: link
+  loop:
+      - aws
+      - aws_completer
+
+- name: Remove AWS CLI installation temporary files on macOS.
+  ansible.builtin.file:
+      path: "{{ aws_installer_choices_file.path }}"
+      state: absent

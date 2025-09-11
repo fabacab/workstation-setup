@@ -1,0 +1,3 @@
+---
+- name: Download and install AWS CLI.
+  ansible.builtin.include_tasks: "aws_{{ ansible_facts.system }}.yaml"

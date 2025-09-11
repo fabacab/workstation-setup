@@ -1,0 +1,34 @@
+# Define your employee workstation's variables here.
+#
+# These variables should be loaded as Ansible "extra vars" when
+# running the workstation setup playbook. If omitted, Ansible
+# will prompt the user to input these values interactively.
+---
+# User part of your email address. For example, if using this
+# in a personal capacity and your email is alice@gmail.com, then
+# you should enter `alice` here. If you're using it at a company
+# and your work email is alice@mycompany.com`, enter `alice` here!
+organization_user: your.name
+
+# Domain part of your email address.
+company_domain: riseup.net
+
+# Change this only if you are using this tool to
+# set up your workstation for a specific company.
+# It should be a filesystem-safe string. For example,
+# if the company is named "Acme Widget Co" you might
+# set this value to `acme-widget-co`.
+organization_name: workstation-setup
+
+# Git configuration. Includes GitHub.
+github_username: your.username         # Your GitHub.com username.
+github_organization: ""                # Set this if part of a GitHub Organization.
+git_author_name: Your Name             # Your name for Git commits.
+git_author_email: your.name@domain.tld # Your email address for Git commits.
+
+# Container registry configuration. Includes Docker Hub.
+docker_hub_username: your.username     # Your Docker Hub username.
+
+# Local filesystem path of where you'd like your workstation workspace
+# (source code checkouts, etc.) to be placed.
+workstation_workspace_dir: /Users/username/src

@@ -1,0 +1,30 @@
+---
+- name: Make temporary directory for GNU/Linux.
+  ansible.builtin.tempfile:
+      state: directory
+      prefix: aws-downloads-
+  register: aws_download_dir
+
+- name: Download AWS CLI installer for GNU/Linux.
+  ansible.builtin.get_url:
+      url: "https://awscli.amazonaws.com/awscli-exe-linux-{{ ansible_facts.machine }}.zip"
+      dest: "{{ aws_download_dir.path }}/awscliv2.zip"
+
+- name: Unzip AWS CLI installer for GNU/Linux.
+  ansible.builtin.unarchive:
+      src: "{{ aws_download_dir.path }}/awscliv2.zip"
+      dest: "{{ aws_download_dir.path }}"
+
+- name: Install AWS CLI for GNU/Linux.
+  become: true
+  ansible.builtin.command: >-
+      {{ aws_download_dir.path }}/aws/install
+      --install-dir {{ lookup('env', 'HOME') }}/bin/aws-cli
+      --bin-dir {{ lookup('env', 'HOME') }}/bin
+  args:
+      creates: "{{ lookup('env', 'HOME') }}/bin/aws-cli"
+
+- name: Remove AWS CLI installation temporary files on GNU/Linux.
+  ansible.builtin.file:
+      path: "{{ aws_download_dir.path }}"
+      state: absent

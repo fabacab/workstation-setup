@@ -1,0 +1,6 @@
+*.log
+*.swp
+.DS_Store
+.vagrant
+build
+workstation.yaml

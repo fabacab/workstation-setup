@@ -1,0 +1,15 @@
+---
+- name: Clone company Git repositories.
+  ansible.builtin.git:
+    repo: "git@github.com:{{ github_organization }}/{{ item }}.git"
+    dest: "{{ git_clone_dest }}/{{ item }}"
+  loop: "{{ git_company_repositories }}"
+  ignore_errors: true
+
+- name: Clone additional Git repositories.
+  when: git_additional_repositories is defined
+  ansible.builtin.git:
+    repo: "{{ item.url }}"
+    dest: "{% if item.dest is defined %}{{ item.dest | ansible.builtin.expanduser }}{% else %}{{ git_clone_dest }}/{{ item.name }}{% endif %}"
+  loop: "{{ git_additional_repositories }}"
+  ignore_errors: true

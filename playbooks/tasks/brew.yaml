@@ -1,0 +1,52 @@
+---
+- name: Test for existing Homebrew installation.
+  register: which_brew
+  ansible.builtin.command: which brew
+  changed_when: false
+  ignore_errors: true
+
+# See https://docs.brew.sh/Installation
+- name: Download and install Homebrew.
+  when: which_brew.rc == 1
+  block:
+  - name: Download Homebrew installation script.
+    ansible.builtin.get_url:
+      url: https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
+      dest: "{{ lookup('env', 'HOME') }}/Downloads/install-homebrew.sh"
+      mode: '0755'
+
+  - name: Temporarily modify sudoers for Homebrew install on macOS.
+    when: ansible_facts.os_family == "Darwin"
+    become: true
+    changed_when: false
+    ansible.builtin.copy:
+      src: ../files/brew-passwordless-install
+      dest: /etc/sudoers.d/brew-passwordless-install
+
+  - name: Install Homebrew.
+    environment:
+      # See https://docs.brew.sh/Installation#unattended-installation
+      NONINTERACTIVE: 1
+    ansible.builtin.script:
+      cmd: "{{ lookup('env', 'HOME') }}/Downloads/install-homebrew.sh"
+    args:
+      executable: /bin/bash
+      creates: "{% if ansible_facts.machine == 'arm64' and ansible_facts.os_family == 'Darwin' %}/opt/homebrew/bin/brew{% else %}/usr/local/bin/brew{% endif %}"
+
+  - name: Remove sudoers modification on macOS.
+    when: ansible_facts.os_family == "Darwin"
+    become: true
+    changed_when: false
+    ansible.builtin.file:
+      path: /etc/sudoers.d/brew-passwordless-install
+      state: absent
+
+- name: Ensure Homebrew bin directory is in PATH.
+  when: ansible_facts.os_family == "Darwin" and ansible_facts.machine == "arm64"
+  ansible.builtin.lineinfile:
+    path: "{{ lookup('env', 'HOME') }}/{{ item }}"
+    line: 'export PATH="$PATH:/opt/homebrew/bin"'
+    state: present
+  loop:
+    - .bash_profile
+    - .zshrc

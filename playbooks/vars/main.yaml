@@ -1,0 +1,156 @@
+# 1Password secrets manager application.
+onepassword_version: 2.28.0
+
+# The `asdf` tool is a cross-platform, lightweight installation
+# and "package" manager that also makes it easy to switch between
+# versions of a given tool on a per-directory basis. See
+#     https://asdf-vm.com
+# Here we define the version of `asdf` itself as well as all the
+# utilities that are easily installable with it.
+asdf_home: "{{ lookup('env', 'HOME') }}/.asdf"
+asdf_version: "v0.11.3"
+asdf_plugins:
+  # Utilities installable via `asdf`. This is a single list, but the
+  # ordering of the items matter. They are divided into "groups" that
+  # define the order in which they are installed.
+  # GROUP 1: Install these utilities first.
+  - name: cosign   # Signature signing and verification utility.
+    version: 2.2.4
+
+  # GROUP 2: Base utilities required for most things.
+  - name: direnv
+    version: 2.36.0 # Remember to change version in post-command, too.
+    post_commands:
+      - module: shell
+        cmd: >
+          asdf direnv setup --shell bash   --version 2.36.0
+          && asdf direnv setup --shell zsh --version 2.36.0
+  - name: opentofu
+    version: 1.9.0
+  - name: terraform
+    version: 1.11.4
+  - name: terraform-docs
+    version: 0.20.0
+  - name: tflint
+    version: 0.56.0
+    git_url: https://github.com/skyzyx/asdf-tflint.git
+  - name: terragrunt
+    version: 0.77.22
+  - name: nodejs
+    version: 20.10.0
+    post_commands:
+      # Support `.nvmrc` and `.node-version` files, too.
+      - module: lineinfile
+        path: "{{ lookup('env', 'HOME') }}/.asdfrc"
+        line: "legacy_version_file = yes"
+      - module: shell
+        cmd: >
+          corepack enable yarn --install-directory ~/bin
+          && corepack prepare yarn@1.22.22 --activate
+        creates: "{{ lookup('env', 'HOME') }}/bin/yarn"
+
+  # GROUP 3: Optional(-ish) utilities. Not every team needs these.
+  - name: aws-vault
+    version: 7.2.0
+  - name: kubectl
+    version: 1.26.3
+  - name: helm
+    version: 3.11.2
+  - name: helm-docs
+    version: 1.11.0
+    git_url: https://github.com/sudermanjr/asdf-helm-docs.git
+  - name: gcloud
+    version: 532.0.0
+    environment:
+      CLOUDSDK_PYTHON: "{{ ansible_facts.python.executable }}"
+  - name: k9s        # Vim-like command line utility for Kubernetes.
+    version: 0.27.3
+  - name: steampipe  # Zero-ETL cloud platform querying tool, useful for DevSecOps.
+    version: 0.23.2
+    post_commands:
+      - module: shell
+        cmd: >
+          steampipe plugin install aws
+        creates: "{{ lookup('env', 'HOME') }}/.steampipe/plugins/hub.steampipe.io/plugins/turbot/aws@latest"
+  #- name: kubectx    # Kubernetes Kubeconfig context switching helper.
+  #  version: 0.9.4
+  #- name: stern      # Easily tail/follow logs from multiple K8s Pods.
+  #  version: 1.24.0
+  #- name: krew       # Plugin manager for `kubectl`.
+  #  version: 0.4.3
+  #- name: argocd
+  #  version: 2.2.5
+
+# Homebrew repositories to tap.
+#homebrew_casks:
+#  - name: examplevendor/private
+#    url: git@github.com:ExampleVendor/homebrew-private.git
+
+# Homebrew packages to install.
+homebrew_tools:
+  - name: bitwarden
+    when: ansible_facts.os_family == 'Darwin' # Linux install via Homebrew not supported.
+  - name: gh       # The GitHub CLI is also useful.
+    when: true
+  - name: jq
+    when: true
+  - name: yq
+    when: true
+  - name: jinja2-cli
+    when: true
+  - name: protobuf # Required by Substrate for Apple Silicon support.
+    when: true
+  - name: gmp      # Required by the TSS...
+    when: ansible_facts.os_family == 'Darwin' # ...on macOS, at least.
+  - name: cmake
+    when: true
+  - name: rustup-init
+    when: true
+  - name: openssl
+    when: true
+  - name: websocat                            # Useful for manually debugging JSON-RPC endpoints.
+    when: true
+  - name: taplo                               # Used in our CI pipelines, useful locally.
+    when: true
+  - name: circleci                            # See https://circleci.com/docs/local-cli/
+    when: ansible_facts.os_family == 'Darwin' # For GNU/Linux, install CircleCI CLI with `snap` instead.
+  - name: hashicorp/tap/hashicorp-vagrant
+    when: true
+  - name: graphviz                            # For graph visualizations from Terraform/Terragrunt, etc.
+    when: true
+  - name: rocksdb                             # For debugging the Substrate embedded Key-Value database.
+    when: true
+  - name: vercel-cli                          # CLI for interacting with our Vercel.com Team.
+    when: true
+
+  #- name: examplevendor/private/package     # From examplevendor/private Cask
+  #  when: true                              # Always install.
+
+# Source code repository variables.
+github_organization: ""                      # Name an organization to use by default.
+# Internal/private ("our") repositories. Define these as repository names only.
+git_company_repositories:
+  # This exists but maybe editor rights should be restricted?
+  # .github
+  - .github-private # Internal organization developer and engineer portal.
+  - meta
+
+  # List repositories that all engineers will need to clone here.
+  #- core
+
+  # List repositories that SREs and some engineers will need here.
+  #- ansible-collection
+  #- devops-infrastructure
+  #- terraform-module-catalog
+
+  # List repositories that Technical Writers and some engineers will need here.
+  #- docs
+
+# External/public ("their") repositories. Define these as full Git remote URLs and names.
+git_additional_repositories:
+  - name: rust.vim                               # For those of us who like Vi. ;)
+    url: https://github.com/rust-lang/rust.vim
+    dest: "~/.vim/pack/plugins/start/rust.vim"
+
+# Various other version definitions.
+version_docker_credential_helper_macos_keychain: 0.7.0 # See https://github.com/docker/docker-credential-helpers/releases

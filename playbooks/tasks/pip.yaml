@@ -1,0 +1,7 @@
+---
+- name: Install packages via Pip.
+  ansible.builtin.pip:
+    chdir: "{{ playbook_dir }}/files"
+    requirements: "requirements.txt"
+    extra_args: --upgrade --user --break-system-packages
+    state: present

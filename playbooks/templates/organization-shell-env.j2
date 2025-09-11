@@ -1,0 +1,38 @@
+# Organization-specific development environment variables.
+#
+# {{ ansible_managed }}
+
+# Local filesystem path to where you are going to check out code repositories.
+export WORKSTATION_WORKSPACE_DIR="{{ workstation_workspace_dir | default('$HOME/src', true) }}"
+
+# First part of your company email.
+export ORGANIZATION_USER="{{ organization_user | default(lookup('pipe', 'whoami') | quote, true) }}"
+export ORGANIZATION_EMAIL="$WORKSTATION_USER@{{ company_domain }}"
+
+###############################################
+# Company IT infrastructure automation setup. #
+###############################################
+# This is unused right now. It's useful in the event we want to one
+# day set up domain-wide delegation of authority for an internal app.
+export GOOGLEWORKSPACE_IMPERSONATED_USER_EMAIL="$ORGANIZATION_EMAIL"
+
+#######################################
+# Company localdev environment setup. #
+#######################################
+
+# Convenience aliases that are referenced everywhere else.
+# For example:
+#alias rm="rm -i"
+
+# Non-secret third party account information.
+# (Secrets go in `$XDG_DATA_DIR/.local/share/COMPANY_NAME/.workstation.auth.sh` instead.)
+export GITHUB_USERNAME="{{ github_username }}"
+export DOCKER_HUB_USERNAME="{{ docker_hub_username }}"
+
+# Source various authentication credentials into environment.
+export WORKSTATION_AUTH_FILE="${XDG_DATA_DIR:-${HOME}/.local/share}/{{ organization_name }}/.workstation.auth.sh"
+if [ -r "$WORKSTATION_AUTH_FILE" -a -x "$(which op)" ]; then
+    eval "$(cat "$WORKSTATION_AUTH_FILE" | op inject)"
+else
+    source "$WORKSTATION_AUTH_FILE"
+fi

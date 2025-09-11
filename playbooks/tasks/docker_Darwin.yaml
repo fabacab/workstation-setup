@@ -1,0 +1,66 @@
+---
+- name: Download Docker CE Desktop for macOS.
+  ansible.builtin.get_url:
+    url: "https://desktop.docker.com/mac/main/{% if 'arm64' == ansible_facts.architecture %}arm64{% else %}amd64{% endif %}/Docker.dmg"
+    dest: "{{ lookup('env', 'HOME') }}/Downloads/Docker.dmg"
+
+- name: Install Docker CE Desktop for macOS.
+  ansible.builtin.command: "osascript files/docker_installer.applescript"
+  args:
+    creates: "/Applications/Docker.app"
+
+- name: Ensure system-wide shell completion directories exist.
+  become: true
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+  loop:
+    - /usr/local/etc/bash_completion.d
+    - /usr/local/share/zsh/site-functions
+
+- name: Set up shell completion for Docker Desktop.
+  become: true
+  ansible.builtin.file:
+    src: "/Applications/Docker.app/Contents/Resources/etc/{{ item.src }}"
+    dest: "{{ item.dest }}"
+    state: link
+  loop:
+    - src: docker.zsh-completion
+      dest: /usr/local/share/zsh/site-functions/_docker
+    - src: docker.bash-completion
+      dest: /usr/local/etc/bash_completion.d/docker
+
+- name: Install Docker Credetial Helper for macOS Keychain.
+  ansible.builtin.get_url:
+    url: "https://github.com/docker/docker-credential-helpers/releases/download/v{{ version_docker_credential_helper_macos_keychain }}/docker-credential-osxkeychain-v{{ version_docker_credential_helper_macos_keychain }}.darwin-{% if 'arm64' == ansible_facts.architecture %}arm64{% else %}amd64{% endif %}"
+    dest: "{{ lookup('env', 'HOME') }}/bin/docker-credential-osxkeychain-v0.7.0.darwin-{% if 'arm64' == ansible_facts.architecture %}arm64{% else %}amd64{% endif %}"
+
+- name: Configure Docker Engine to use macOS Keychain Credential Helper.
+  block:
+    - name: Ensure Docker client configuration folder exists.
+      ansible.builtin.file:
+        path: "{{ docker_config_json_path | ansible.builtin.dirname }}"
+        state: directory
+
+    - name: Ensure Docker client configuration file exists.
+      ansible.builtin.file:
+        path: "{{ docker_config_json_path }}"
+        state: touch
+        mode: "0644"
+        modification_time: preserve
+
+    - name: Load Docker client configuration file.
+      ansible.builtin.include_vars:
+        file: "{{ docker_config_json_path }}"
+        name: docker_config
+
+    - name: Configure the Docker client credentials store.
+      ansible.builtin.set_fact:
+        docker_config: "{{ docker_config | default({}) | ansible.builtin.combine({ 'credsStore': 'osxkeychain' }) }}"
+
+    - name: Write updated Docker client configuration file.
+      ansible.builtin.copy:
+        content: "{{ docker_config | to_nice_json }}"
+        dest: "{{ docker_config_json_path }}"
+  vars:
+    docker_config_json_path: "{{ lookup('env', 'HOME') }}/.docker/config.json"

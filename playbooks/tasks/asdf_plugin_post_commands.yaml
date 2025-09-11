@@ -1,0 +1,17 @@
+# Handle a certain level of complexity for post-installation
+# setup of asdf plugins using various Ansible modules.
+---
+- name: Run shell post command
+  when: item.module == "shell"
+  ansible.builtin.shell:
+    cmd: "{{ item.cmd }}"
+    creates: "{{ item.creates | default('') }}"
+  loop: "{{ asdf_plugin.post_commands }}"
+
+- name: Run lineinfile post command
+  when: item.module == "lineinfile"
+  ansible.builtin.lineinfile:
+    path: "{{ item.path }}"
+    line: "{{ item.line }}"
+    create: true
+  loop: "{{ asdf_plugin.post_commands }}"

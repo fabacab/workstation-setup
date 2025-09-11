@@ -1,0 +1,14 @@
+# This is Python Pip requirements file. See:
+# https://pip.pypa.io/en/stable/reference/requirements-file-format/
+
+# Packages for Ansible development.
+molecule
+molecule-docker
+
+# For Ansible playbooks.
+jmespath
+botocore
+boto3
+
+# Additionally useful utilities.
+toml-cli

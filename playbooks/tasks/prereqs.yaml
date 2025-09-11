@@ -1,0 +1,85 @@
+---
+# We don't technically need a specific Python version but it's very
+# helpful to standardize on something. Python 3.(8|9) seems to be both
+# new and stable enough to be a good choice for now.
+- name: Register python3 interpreter version.
+  ansible.builtin.command: "python3 --version"
+  register: python3_version
+  changed_when: false
+
+- name: Ensure python3 executable is a version 3.x interpreter.
+  ansible.builtin.assert:
+    that:
+      - "python3_version.stdout | regex_search('^Python 3.(11|12|13)')"
+    fail_msg: >-
+      Please make sure that `python3 --version` returns a
+      Python interpreter version beginning with 3.11 through 3.13.
+      It currently returns "{{ python3_version.stdout }}".
+
+- name: Make expected filesystem directories.
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: u+rwx
+  loop:
+    - "{{ lookup('ansible.builtin.env', 'HOME') }}/Downloads"
+    - "{{ lookup('ansible.builtin.env', 'HOME') }}/bin"
+    - "{{ lookup('ansible.builtin.env', 'HOME') }}/src"
+    - "{{ lookup('ansible.builtin.env', 'XDG_CACHE_HOME') | default('~/.cache', true) | ansible.builtin.expanduser }}/{{ organization_name }}"
+    - "{{ lookup('ansible.builtin.env', 'XDG_CONFIG_HOME') | default('~/.config', true) | ansible.builtin.expanduser }}/{{ organization_name }}"
+    - "{{ lookup('ansible.builtin.env', 'XDG_DATA_HOME') | default('~/.local/share', true) | ansible.builtin.expanduser }}/{{ organization_name }}"
+
+    # Let's make sure SSH keys for GitHub.com remain organized.
+    - "{{ lookup('ansible.builtin.env', 'HOME') }}/.ssh/github.com/{{ github_organization }}"
+
+- name: Create synthetic /srv directory for macOS.
+  when: ansible_facts.system == 'Darwin'
+  become: true
+  block:
+    - name: Ensure shared /srv directory exists for macOS.
+      ansible.builtin.file:
+        path: /Users/Shared/srv
+        state: directory
+        mode: '0757' # Let any user write to this shared directory.
+
+    - name: Ensure synthetic.conf file exists for macOS.
+      ansible.builtin.file:
+        path: /etc/synthetic.conf
+        state: touch
+        mode: '0644'
+        modification_time: preserve
+        access_time: preserve
+      notify:
+        - Reboot
+
+    - name: Ensure synthetic.d directory exists for macOS.
+      ansible.builtin.file:
+        path: /etc/synthetic.d
+        state: directory
+        mode: u+rwx
+
+    - name: Write synthetic entity configuration file for macOS.
+      ansible.builtin.template:
+        src: synthetic.conf.j2
+        dest: /etc/synthetic.d/workstation.conf
+        owner: root
+        group: wheel
+        mode: '0644'
+      notify:
+        - Reboot
+
+- name: Add user's bin directory to shell.
+  ansible.builtin.lineinfile:
+      path: "{{ item }}"
+      line: 'export PATH="$HOME/bin:$PATH"'
+      state: present
+  loop:
+      - "{{ lookup('env', 'HOME') }}/.bash_profile"
+      - "{{ lookup('env', 'HOME') }}/.zshrc"
+  ignore_errors: true
+
+- name: Enable Zsh autocompletion system.
+  ansible.builtin.lineinfile:
+    path: "{{ lookup('env', 'HOME') }}/.zshrc"
+    line: "autoload -U compinit; compinit"
+    state: present

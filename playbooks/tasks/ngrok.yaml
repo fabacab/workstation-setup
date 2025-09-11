@@ -1,0 +1,3 @@
+---
+- name: Download and install ngrok.
+  ansible.builtin.include_tasks: "ngrok_{{ ansible_facts.system }}.yaml"

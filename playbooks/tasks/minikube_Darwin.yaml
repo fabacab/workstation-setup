@@ -1,0 +1,13 @@
+---
+# TODO: Pin the version of this.
+- name: Download latest Minikube release.
+  ansible.builtin.get_url:
+    url: "https://storage.googleapis.com/minikube/releases/latest/minikube-darwin-{% if 'arm64' == ansible_facts.architecture %}arm64{% else %}amd64{% endif %}"
+    dest: "{{ lookup('env', 'HOME') }}/Downloads"
+
+- name: Install Minikube for macOS.
+  ansible.builtin.command:
+    install minikube-darwin-{% if 'arm64' == ansible_facts.architecture %}arm64{% else %}amd64{% endif %} {{ lookup('env', 'HOME') }}/bin/minikube
+  args:
+    chdir: "{{ lookup('env', 'HOME') }}/Downloads"
+    creates: "{{ lookup('env', 'HOME') }}/bin/minikube"
