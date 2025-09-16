@@ -33,6 +33,6 @@ export DOCKER_HUB_USERNAME="{{ docker_hub_username }}"
 export WORKSTATION_AUTH_FILE="${XDG_DATA_DIR:-${HOME}/.local/share}/{{ organization_name }}/.workstation.auth.sh"
 if [ -r "$WORKSTATION_AUTH_FILE" -a -x "$(which op)" ]; then
     eval "$(cat "$WORKSTATION_AUTH_FILE" | op inject)"
-else
+elif [ -r "$WORKSTATION_AUTH_FILE" ]; then
     source "$WORKSTATION_AUTH_FILE"
 fi
