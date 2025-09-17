@@ -25,6 +25,8 @@ asdf_plugins:
         cmd: >
           asdf direnv setup --shell bash   --version 2.36.0
           && asdf direnv setup --shell zsh --version 2.36.0
+  - name: grpcurl
+    version: 1.9.3
   - name: opentofu
     version: 1.9.0
   - name: terraform
