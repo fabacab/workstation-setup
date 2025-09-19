@@ -52,7 +52,6 @@
     - name: Install 1Password
       ansible.builtin.import_tasks: tasks/1password.yaml
 
-    # TODO: Tailscale is our company VPN. Let's do this early.
     - name: Install Tailscale
       ansible.builtin.import_tasks: tasks/tailscale.yaml
 

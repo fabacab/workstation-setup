@@ -1,7 +1,10 @@
 ---
-- name: Make Downloads directory.
-  ansible.builtin.file:
-      path: "{{ lookup('env', 'HOME') }}/Downloads"
-      state: directory
+- name: Download Tailscale for macOS.
+  ansible.builtin.get_url:
+    url: "https://pkgs.tailscale.com/stable/Tailscale-latest-macos.pkg"
+    dest: "{{ lookup('env', 'HOME') }}/Downloads/Tailscale-latest-macos.pkg"
 
-# TODO
+- name: Install Tailscale for macOS.
+  ansible.builtin.command: "osascript files/tailscale_installer.applescript"
+  args:
+    creates: "/Applications/Tailscale.app"
