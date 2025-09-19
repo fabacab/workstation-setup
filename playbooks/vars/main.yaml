@@ -1,6 +1,3 @@
-# 1Password secrets manager application.
-onepassword_version: 2.28.0
-
 # The `asdf` tool is a cross-platform, lightweight installation
 # and "package" manager that also makes it easy to switch between
 # versions of a given tool on a per-directory basis. See
@@ -127,6 +124,12 @@ homebrew_tools:
 
   #- name: examplevendor/private/package     # From examplevendor/private Cask
   #  when: true                              # Always install.
+
+# Standalone package versions.
+# Mostly for macOS packages when not installed through a package manager.
+package_versions:
+  onepassword: 2.28.0 # 1Password secrets manager application.
+  tailscale: 1.88.2   # Tailscale VPN, see https://pkgs.tailscale.com/stable/
 
 # Source code repository variables.
 github_organization: ""                      # Name an organization to use by default.
